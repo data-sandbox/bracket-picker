@@ -7,8 +7,27 @@ Initial creation: 2022 03
 
 import random
 
-west = ['team1', 'team2']
+def readFile(fileName):
+        fileObj = open(fileName, "r") #opens the file in read mode
+        words = fileObj.read().splitlines() #puts the file into an array
+        fileObj.close()
+        return words
 
-for i in range(10):
-    round1 = random.choices(west, cum_weights=(0.5, 1.0), k=1)
-    print(round1)
+west = readFile('west.txt')
+
+round1 = []
+
+# round 1
+# for i in range(int(len(west)/2)):
+#     matchup = [west[i], west[-1-i]]
+#     winner = random.choices(matchup, cum_weights=(0.99, 1.0), k=1)
+#     round1.append(winner)
+#     print(winner)
+    
+# round 1
+for i in range(0, len(west), 2):
+    matchup = [west[i], west[i+1]]
+    winner = random.choices(matchup, cum_weights=(0.99, 1.0), k=1)
+    round1.append(winner)
+    
+print(round1)
