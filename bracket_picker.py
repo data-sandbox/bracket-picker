@@ -42,7 +42,7 @@ def matchup(round_input_df):
         
         round_output_df = pd.concat([round_output_df, team_advancing])
         
-        # reset index
+        # reset index, otherwise indexing error occurs
         round_output_df = round_output_df.reset_index(drop=True)
         
     return round_output_df
@@ -52,20 +52,31 @@ def matchup(round_input_df):
 if __name__ == "__main__":
     
     # import initial list of teams
-    round_df = pd.read_csv('west.csv')
+    west_df = pd.read_csv('west.csv')
+    east_df = pd.read_csv('east.csv')
+    
+    all_teams = [west_df, east_df]
     
     # initialize list of df's containing the round winners
     round_output_df = [pd.DataFrame()]*4
     
-    # initial input to the matchup() function
-    current_round_df = round_df
+    final_four_df = [pd.DataFrame()]*4
     
-    for i in range(len(round_output_df)):
+    #current_round_df = west_df
+    
+    for z in range(len(all_teams)):
         
-        round_output_df[i] = matchup(current_round_df)
+        # initial input to the matchup() function
+        current_round_df = all_teams[z]
         
-        # use downselected list of teams during next iteration
-        current_round_df = round_output_df[i]
+        for i in range(len(round_output_df)):
+            
+            round_output_df[i] = matchup(current_round_df)
+            
+            # use downselected list of teams during next iteration
+            current_round_df = round_output_df[i]
+        
+        final_four_df[z] = round_output_df[-1]
         
     
     
