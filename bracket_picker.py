@@ -51,15 +51,15 @@ def matchup(round_input_df):
 
 if __name__ == "__main__":
     
-    region_names = np.array(['west', 'east', 'south', 'midwest'])
+    region_names = np.array(['east', 'west', 'south', 'midwest'])
     #region_names = ['west', 'east', 'south', 'midwest']
     
     # import initial list of teams
-    west_df = pd.read_csv(region_names[0] + '.csv')
-    west_df['region'] = region_names[0]
+    east_df = pd.read_csv(region_names[0] + '.csv')
+    east_df['region'] = region_names[0]    
     
-    east_df = pd.read_csv(region_names[1] + '.csv')
-    east_df['region'] = region_names[1]
+    west_df = pd.read_csv(region_names[1] + '.csv')
+    west_df['region'] = region_names[1]
     
     south_df = pd.read_csv(region_names[2] + '.csv')
     south_df['region'] = region_names[2]
@@ -69,19 +69,16 @@ if __name__ == "__main__":
     
     regions = [east_df, west_df, south_df, midwest_df]
     
-    # initialize list of df's containing the round winners
-    round_output_df = [pd.DataFrame()]*4
+    # initialize list of df's containing each round's winners
+    round_output_df = [pd.DataFrame()]*6
     
-    final_four_df = [pd.DataFrame()]*4
-    
-    #current_round_df = west_df
-    
+    # iterate through all rounds leading to the final four
     for z in range(len(regions)):
         
         # initial input to the matchup() function
         current_round_df = regions[z]
         
-        for i in range(len(round_output_df)):
+        for i in range(0, 4):
             
             #round_output_df[i] = matchup(current_round_df)
             round_output_df[i] = pd.concat([round_output_df[i], 
@@ -92,15 +89,28 @@ if __name__ == "__main__":
             
             # use downselected list of teams during next iteration
             current_round_df = round_output_df[i]
-            print(current_round_df)
-            current_round_df = current_round_df[current_round_df['region'].str.contains(region_names[z])]
-
+            current_round_df = current_round_df[current_round_df['region'] == region_names[z]]
             
-        # store history of round winners
-        
-        
-        # store winner in final four bracket
-        final_four_df[z] = round_output_df[-1]
-        
+            # reset index, otherwise indexing error occurs
+            current_round_df = current_round_df.reset_index(drop=True)
+    
+    
+    # simulate final four  
+    final_four_df = round_output_df[3]
+    
+    matchup_df = final_four_df[(final_four_df['region'] == region_names[0]) | (final_four_df['region'] == region_names[1])]
+    round_output_df[4] = pd.concat([round_output_df[4], 
+                                    matchup(matchup_df)])
+    
+    matchup_df = final_four_df[(final_four_df['region'] == region_names[2]) | (final_four_df['region'] == region_names[3])]
+    matchup_df = matchup_df.reset_index(drop=True)
+    
+    # semifinal matchup
+    round_output_df[4] = pd.concat([round_output_df[4], 
+                                    matchup(matchup_df)])
+    round_output_df[4] = round_output_df[4].reset_index(drop=True)
+    
+    # championship matchup
+    round_output_df[5] = matchup(round_output_df[4])
     
     
