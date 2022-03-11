@@ -31,22 +31,25 @@ def matchup(round_input_df):
         
         # df index to seed conversion
         seed = np.array([index[0] + 1, index[1] + 1])
-        
-        # probability seed[0] will win
+       
         seed_difference = seed[1] - seed[0]
+        
         # prevent log error if seed difference equals 0
-        if seed_difference < 1:
-            seed_difference = 1
+        # if seed_difference < 1:
+        #     seed_difference = 1
+        
+        # probability seed[0] will win   
         probability = 0.177*math.log(seed_difference) + 0.500
-    
+        
+        # winner of matchup
         winner = random.choices(matchup, cum_weights=(probability, 1.0), k=1)
         
+        # df row of matchup winner
         team_advancing = round_input_df.loc[round_input_df['seed'] == int(winner[0])]
         
-        round_output_df = pd.concat([round_output_df, team_advancing])
-        
-        # reset index, otherwise indexing error occurs
-        round_output_df = round_output_df.reset_index(drop=True)
+        # append matchup winner to output df
+        # reset index otherwise indexing error occurs
+        round_output_df = pd.concat([round_output_df, team_advancing]).reset_index(drop=True)
         
     return round_output_df
 
@@ -54,12 +57,18 @@ def matchup(round_input_df):
 
 if __name__ == "__main__":
     
+    debug = True
+    
+    if debug == True:
+        random.seed(2)
+    
     region_names = np.array(['east', 'west', 'south', 'midwest'])
     
     # initialize list of df's containing each round's winners
     round_output_df = [pd.DataFrame()]*7
     
     for i in region_names:
+        
         region_df = pd.read_csv(i + '.csv')
         # add column for region name
         region_df['region'] = i
@@ -71,42 +80,37 @@ if __name__ == "__main__":
         
         # initial input to the matchup() function
         current_round_df = round_output_df[0]
-        current_round_df = current_round_df[current_round_df['region']==z]
-        # reset index, otherwise indexing error occurs
-        current_round_df = current_round_df.reset_index(drop=True)
+        
+        mask = current_round_df['region']==z
+        current_round_df = current_round_df[mask].reset_index(drop=True)     
         
         # iterate through 4 rounds to determine the region winner
         for i in range(1, 5):
 
             #round_output_df[i] = matchup(current_round_df)
             round_output_df[i] = pd.concat([round_output_df[i], 
-                                           matchup(current_round_df)])
+                                           matchup(current_round_df)]).reset_index(drop=True)
             
-            # reset index, otherwise indexing error occurs
-            round_output_df[i] = round_output_df[i].reset_index(drop=True)
             
             # use downselected list of teams during next iteration
             current_round_df = round_output_df[i]
-            current_round_df = current_round_df[current_round_df['region']==z]
-            
-            # reset index, otherwise indexing error occurs
-            current_round_df = current_round_df.reset_index(drop=True)
-    
+            mask = current_round_df['region']==z
+            current_round_df = current_round_df[mask].reset_index(drop=True)
     
     # simulate final four  
     final_four_df = round_output_df[4]
     
-    matchup_df = final_four_df[(final_four_df['region'] == region_names[0]) | (final_four_df['region'] == region_names[1])]
+    mask = (final_four_df['region'] == region_names[0]) | (final_four_df['region'] == region_names[1])
+    matchup_df = final_four_df[mask]
     round_output_df[5] = pd.concat([round_output_df[5], 
                                     matchup(matchup_df)])
     
-    matchup_df = final_four_df[(final_four_df['region'] == region_names[2]) | (final_four_df['region'] == region_names[3])]
-    matchup_df = matchup_df.reset_index(drop=True)
-    
+    mask = (final_four_df['region'] == region_names[2]) | (final_four_df['region'] == region_names[3])
+    matchup_df = final_four_df[mask].reset_index(drop=True)
+
     # semifinal matchup
     round_output_df[5] = pd.concat([round_output_df[5], 
-                                    matchup(matchup_df)])
-    round_output_df[5] = round_output_df[5].reset_index(drop=True)
+                                    matchup(matchup_df)]).reset_index(drop=True)
     
     # championship matchup
     round_output_df[6] = matchup(round_output_df[5])
