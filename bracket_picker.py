@@ -49,7 +49,8 @@ def matchup(round_input_df):
         
         # append matchup winner to output df
         # reset index otherwise indexing error occurs
-        round_output_df = pd.concat([round_output_df, team_advancing]).reset_index(drop=True)
+        round_output_df = pd.concat([round_output_df, team_advancing],
+                                    ignore_index=True, sort=False)
         
     return round_output_df
 
@@ -73,7 +74,14 @@ if __name__ == "__main__":
         # add column for region name
         region_df['region'] = i
         # build single df with all teams in all regions
-        round_output_df[0] = pd.concat([round_output_df[0], region_df])
+        #round_output_df[0] = pd.concat([round_output_df[0], region_df],
+        #                               ignore_index=True, sort=False)
+        if i == region_names[0]:
+            round_output_df[0] = region_df
+        else:
+            round_output_df[0] = pd.merge(round_output_df[0], region_df,
+                                          how='outer',
+                                          sort=False)
     
     # iterate through the 4 regions
     for z in region_names:
@@ -89,7 +97,8 @@ if __name__ == "__main__":
 
             #round_output_df[i] = matchup(current_round_df)
             round_output_df[i] = pd.concat([round_output_df[i], 
-                                           matchup(current_round_df)]).reset_index(drop=True)
+                                           matchup(current_round_df)],
+                                           ignore_index=True, sort=False)
             
             
             # use downselected list of teams during next iteration
@@ -110,7 +119,8 @@ if __name__ == "__main__":
 
     # semifinal matchup
     round_output_df[5] = pd.concat([round_output_df[5], 
-                                    matchup(matchup_df)]).reset_index(drop=True)
+                                    matchup(matchup_df)],
+                                    ignore_index=True, sort=False)
     
     # championship matchup
     round_output_df[6] = matchup(round_output_df[5])
