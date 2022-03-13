@@ -20,6 +20,9 @@ def matchup(round_input_df):
     """
     Select a matchup winner based on probability parameter
     """
+    # reset df index for later operations
+    round_input_df = round_input_df.reset_index(drop=True)
+    
     # initialize df
     round_output_df = pd.DataFrame()
     
@@ -27,25 +30,34 @@ def matchup(round_input_df):
         # locate teams by df index
         index = np.array([i, len(round_input_df)-1-i])
         # team matchup
-        matchup = [round_input_df['seed'][index[0]], round_input_df['seed'][index[1]]]
+        #mask = (round_input_df['seed'] == i) & (round_input_df['seed'] == len(round_input_df)-1-i])
+        
+        #round_input_df = 
+        #matchup = [round_input_df['seed'][index[0]], round_input_df['seed'][index[1]]]
+        # matchup based on index
+        matchup = [index[0], index[1]]
         
         # df index to seed conversion
-        seed = np.array([index[0] + 1, index[1] + 1])
+        #seed = np.array([index[0] + 1, index[1] + 1])
        
-        seed_difference = seed[1] - seed[0]
+        #seed_difference = seed[1] - seed[0]
+        seed_difference = round_input_df['seed'][index[1]] - round_input_df['seed'][index[0]]
         
         # prevent log error if seed difference equals 0
-        # if seed_difference < 1:
-        #     seed_difference = 1
+        if seed_difference < 1:
+            seed_difference = 1
         
-        # probability seed[0] will win   
-        probability = 0.177*math.log(seed_difference) + 0.500
+        # cannot take log of negative number
+        probability = 0.177*math.log(abs(seed_difference)) + 0.500
         
-        # winner of matchup
-        winner = random.choices(matchup, cum_weights=(probability, 1.0), k=1)
+        if seed_difference >= 0:
+            winner = random.choices(matchup, cum_weights=(probability, 1.0), k=1)
+        else:
+            # reverse matchup order to account of negative seed_difference
+            winner = random.choices(np.flip(matchup), cum_weights=(probability, 1.0), k=1)
         
         # df row of matchup winner
-        team_advancing = round_input_df.loc[round_input_df['seed'] == int(winner[0])]
+        team_advancing = round_input_df.loc[winner]
         
         # append matchup winner to output df
         # reset index otherwise indexing error occurs
@@ -58,10 +70,10 @@ def matchup(round_input_df):
 
 if __name__ == "__main__":
     
-    debug = True
+    debug = False
     
     if debug == True:
-        random.seed(2)
+        random.seed(4)
     
     region_names = np.array(['east', 'west', 'south', 'midwest'])
     
@@ -82,7 +94,7 @@ if __name__ == "__main__":
             round_output_df[0] = pd.merge(round_output_df[0], region_df,
                                           how='outer',
                                           sort=False)
-    
+
     # iterate through the 4 regions
     for z in region_names:
         
@@ -97,8 +109,15 @@ if __name__ == "__main__":
 
             #round_output_df[i] = matchup(current_round_df)
             round_output_df[i] = pd.concat([round_output_df[i], 
-                                           matchup(current_round_df)],
-                                           ignore_index=True, sort=False)
+                                            matchup(current_round_df)],
+                                            ignore_index=True, sort=False)
+            # if i == 1:
+            #     round_output_df[i] = matchup(current_round_df)
+            # else:
+            #     round_output_df[i] = pd.merge(round_output_df[i], 
+            #                               matchup(current_round_df),
+            #                               how='outer',
+            #                               sort=False)
             
             
             # use downselected list of teams during next iteration
@@ -106,18 +125,19 @@ if __name__ == "__main__":
             mask = current_round_df['region']==z
             current_round_df = current_round_df[mask].reset_index(drop=True)
     
-    # simulate final four  
+    # get semi-finalists
     final_four_df = round_output_df[4]
     
     mask = (final_four_df['region'] == region_names[0]) | (final_four_df['region'] == region_names[1])
     matchup_df = final_four_df[mask]
-    round_output_df[5] = pd.concat([round_output_df[5], 
-                                    matchup(matchup_df)])
+ 
+    # semi-finalist 1
+    round_output_df[5] = matchup(matchup_df)
     
     mask = (final_four_df['region'] == region_names[2]) | (final_four_df['region'] == region_names[3])
-    matchup_df = final_four_df[mask].reset_index(drop=True)
+    matchup_df = final_four_df[mask]
 
-    # semifinal matchup
+    # semi-finalist 2
     round_output_df[5] = pd.concat([round_output_df[5], 
                                     matchup(matchup_df)],
                                     ignore_index=True, sort=False)
